@@ -86,7 +86,7 @@
             const token = sessionStorage.getItem('token');
             const authButtons = document.getElementById('auth-buttons');
             const writePostButton = document.getElementById('write-post');
-            const data = await fetch('http://localhost:8000/token', {
+            const data = await fetch('/token', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -123,7 +123,7 @@
             const token = sessionStorage.getItem('token');
             const authButtons = document.getElementById('auth-buttons');
             const writePostButton = document.getElementById('write-post');
-            const data = await fetch('http://localhost:8000/token', {
+            const data = await fetch('/token', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -147,7 +147,7 @@
                     <div class="comment-actions">
                          ${comment.user_id === userId ? 
                           `<button class="edit" onclick="editComment('${userId}', ${comment.reply_id})">수정</button>
-                          <button class="delete" onclick="deleteComment('${userId}', ${comment.reply_id})">삭제</button>
+                          <button class="delete" onclick="deleteComment(${comment.reply_id})">삭제</button>
                           ` : ''}
                     </div>`;
                 commentsList.appendChild(li);
@@ -170,7 +170,7 @@
             let path = window.location.pathname; // /posts/id/reply
             let postId = path.split('/')[2];
             const token = sessionStorage.getItem('token');
-            const data = await fetch('http://localhost:8000/token', {
+            const data = await fetch('/token', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

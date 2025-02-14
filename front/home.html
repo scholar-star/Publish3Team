@@ -196,7 +196,7 @@
         async function fetchPosts(page = 1) {
             var selects = null;
             const query = document.getElementById('search').value;
-            const all_resp = await fetch(`http://localhost:8000/posts?page=${page}&limit=${limit}&category=${encodeURIComponent(currentCategory)}`);
+            const all_resp = await fetch(`/posts?page=${page}&limit=${limit}&category=${encodeURIComponent(currentCategory)}`);
             const all_data = await all_resp.json();
             const posts = all_data.posts;
             const famousPosts = all_data.famousPosts;
@@ -204,7 +204,7 @@
             console.log(famousPosts);
 
             if(query!='') {
-                const response = await fetch(`http://localhost:8000/posts?query=${query}&page=${page}&limit=${limit}&category=${encodeURIComponent(currentCategory)}`);
+                const response = await fetch(`/posts?query=${query}&page=${page}&limit=${limit}&category=${encodeURIComponent(currentCategory)}`);
                 const data = await response.json();
                 selects = data.posts;
             }
@@ -259,7 +259,7 @@
             const token = sessionStorage.getItem('token');
             const authButtons = document.getElementById('auth-buttons');
             const writePostButton = document.getElementById('write-post');
-            const response = await fetch('http://localhost:8000/token', {
+            const response = await fetch('/token', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

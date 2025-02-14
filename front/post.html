@@ -135,7 +135,7 @@
 
             try {
                 const token = sessionStorage.getItem('token');
-                const data = await fetch('http://localhost:8000/token', {
+                const data = await fetch('/token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token })
@@ -143,7 +143,7 @@
 
                 const user_id = data.id;
 
-                const response = await fetch(`http://localhost:8000/post/${post_id}`, {
+                const response = await fetch(`/post/${post_id}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ "post_id": parseInt(post_id), "user_id": user_id})
@@ -178,7 +178,7 @@
 
             const post_id = getPostIdFromURL();
 
-            const data = await fetch('http://localhost:8000/token', {
+            const data = await fetch('/token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token })
@@ -198,7 +198,7 @@
 
             if (!post_id) { 
                 console.log("게시글 생성");
-                const response = await fetch('http://localhost:8000/cpost', {
+                const response = await fetch('/cpost', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ "user_id": user_id, "title": title, "content": content, 
@@ -207,13 +207,13 @@
 
                 if (response.ok) {
                     alert("게시글이 등록되었습니다.");
-                    window.location.href = "http://localhost:8000/home";
+                    window.location.href = "/home";
                 } else {
                     alert("게시글 작성에 실패했습니다.");
                 }
             } else { 
                 console.log("게시글 수정");
-                const response = await fetch('http://localhost:8000/update', {
+                const response = await fetch('/update', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ "post_id": post_id, "user_id": user_id, "title": title, "content": content, "category": category, "published": published })
@@ -221,7 +221,7 @@
 
                 if (response.ok) {
                     alert("게시글이 수정되었습니다.");
-                    window.location.href = "http://localhost:8000/home";
+                    window.location.href = "/home";
                 } else {
                     alert("게시글 수정에 실패했습니다.");
                 }

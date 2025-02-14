@@ -168,7 +168,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:8000/token', {
+                const response = await fetch('/token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ token })
@@ -201,7 +201,7 @@
             try {
                 console.log(`요청 보냄: POST /view, post_id=${post_id}, user_id=${loggedInUserId}`);
 
-                const response = await fetch(`http://localhost:8000/view`, {
+                const response = await fetch(`/view`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ "post_id": post_id, "user_id": loggedInUserId })
@@ -259,13 +259,13 @@
         // 댓글 페이지 이동
         function reply() {
             const post_id = getpost_idFromUrl();
-            window.location.href = `http://localhost:8000/posts/${post_id}/replies`;
+            window.location.href = `/posts/${post_id}/replies`;
         }
 
         // 게시글 수정 페이지 이동
         function editPost() {
             const post_id = getpost_idFromUrl();
-            window.location.href = `http://localhost:8000/post/${post_id}`;
+            window.location.href = `/post/${post_id}`;
         }
 
         // 게시글 삭제
@@ -274,7 +274,7 @@
 
             if (confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
                 try {
-                    const response = await fetch(`http://localhost:8000/delete/${post_id}`, {
+                    const response = await fetch(`/delete/${post_id}`, {
                         method: "DELETE",
                         headers: { "Content-Type": "application/json" }
                     });

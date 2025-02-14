@@ -73,7 +73,7 @@
             const user_id = document.getElementById('login-user_id').value;
             const password = document.getElementById('login-password').value;
             
-            const response = await fetch('http://localhost:8000/login', {
+            const response = await fetch('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -85,7 +85,7 @@
             if (response.ok) {
                 sessionStorage.setItem('token', data.token);
                 alert('로그인 성공!');
-                location.href="http://localhost:8000/home"
+                location.href="/home"
             } else {
                 alert('로그인 실패: ' + data.detail);
             }
