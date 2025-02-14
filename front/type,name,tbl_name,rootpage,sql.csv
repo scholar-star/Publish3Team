@@ -1,0 +1,10 @@
+type,name,tbl_name,rootpage,sql
+table,signupreq,signupreq,2,"CREATE TABLE signupreq (
+	username VARCHAR NOT NULL, 
+	password VARCHAR NOT NULL, 
+	name VARCHAR NOT NULL, 
+	phone VARCHAR, 
+	email VARCHAR, 
+	PRIMARY KEY (username)
+)"
+index,sqlite_autoindex_signupreq_1,signupreq,3,NULL

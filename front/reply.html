@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comments Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        #comment-form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        #comment-form label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        #comment-form input, #comment-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #comment-form button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #comment-form button:hover {
+            background-color: #0056b3;
+        }
+        #comments-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        #comments-list li {
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .comment-text {
+            flex-grow: 1;
+        }
+        .comment-actions {
+            margin-left: 10px;
+        }
+        .comment-actions button {
+            margin-left: 5px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .comment-actions button.edit {
+            background-color: #ffc107;
+            color: #fff;
+        }
+        .comment-actions button.delete {
+            background-color: #dc3545;
+            color: #fff;
+        }
+    </style>
+    <script>
+        async function submitComment(event) {
+            event.preventDefault();
+            const token = sessionStorage.getItem('token');
+            const authButtons = document.getElementById('auth-buttons');
+            const writePostButton = document.getElementById('write-post');
+            const data = await fetch('http://localhost:8000/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ token: token })
+            }).then(res => res.json());
+            const userId = data.id;
+            if(userId===undefined) {
+                alert("로그인이 필요합니다.");
+                location.href = '/login';
+            }
+            const reply = document.getElementById('reply').value;
+            
+            let path = window.location.pathname; // /posts/id/reply
+            let postId = path.split('/')[2];
+
+            const response = await fetch(`/posts/${postId}/replies`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_id: userId, reply: reply })
+            });
+            console.log(response);
+            if (response.ok) {
+                document.getElementById('reply').value = '';
+                loadComments();
+            } else {
+                alert('Failed to submit comment');
+            }
+        }
+
+        async function loadComments() {
+            const token = sessionStorage.getItem('token');
+            const authButtons = document.getElementById('auth-buttons');
+            const writePostButton = document.getElementById('write-post');
+            const data = await fetch('http://localhost:8000/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ token: token })
+            }).then(res => res.json());
+            const userId = data.id;
+            let path = window.location.pathname; // /posts/id/reply
+            let postId = path.split('/')[2];
+
+            const response = await fetch(`/posts/${postId}/repliesList`);
+            const comments = await response.json();
+            const replys = comments.replys;
+            console.log(replys);
+            const commentsList = document.getElementById('comments-list');
+            commentsList.innerHTML = '';
+            replys.forEach(comment => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="comment-text" id="comment-text-${comment.reply_id}">${comment.user_id}: ${comment.reply}</span>
+                    <div class="comment-actions">
+                         ${comment.user_id === userId ? 
+                          `<button class="edit" onclick="editComment('${userId}', ${comment.reply_id})">수정</button>
+                          <button class="delete" onclick="deleteComment('${userId}', ${comment.reply_id})">삭제</button>
+                          ` : ''}
+                    </div>`;
+                commentsList.appendChild(li);
+            });
+        }
+
+        async function editComment(userid, replyId) {
+            console.log(userid, replyId);
+            const commentTextElement = document.getElementById(`comment-text-${replyId}`);
+            console.log(commentTextElement);
+            const originalText = commentTextElement.innerText.split(': ')[1];
+            commentTextElement.innerHTML = `
+                <textarea id="edit-reply-${replyId}" rows="3" style="width: 100%;">${originalText}</textarea>
+                <button onclick="saveComment('${userid}', ${replyId})">저장</button>
+                <button onclick="cancelEdit('${userid}', ${replyId}, '${originalText}')">취소</button>
+            `;
+        }
+
+        async function saveComment(userid, replyId) {
+            let path = window.location.pathname; // /posts/id/reply
+            let postId = path.split('/')[2];
+            const token = sessionStorage.getItem('token');
+            const data = await fetch('http://localhost:8000/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ token: token })
+            }).then(res => res.json());
+            // const userid = data.id;
+
+            const newReply = document.getElementById(`edit-reply-${replyId}`).value;
+            if (newReply) {
+                const response = await fetch(`/posts/${postId}/replies/${replyId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ user_id: userid, reply: newReply })
+                });
+                if (response.ok) {
+                    loadComments();
+                } else {
+                    alert('Failed to edit comment');
+                }
+            }
+        }
+
+        function cancelEdit(userid, replyId, originalText) {
+            const commentTextElement = document.getElementById(`comment-text-${replyId}`);
+            commentTextElement.innerHTML = `${userid}: ${originalText}`;
+        }
+
+        // async function editComment(replyId) {
+        //     let path = window.location.pathname; // /posts/id/reply
+        //     let postId = path.split('/')[2];
+        //     const userId = await fetch(`/token`, {
+        //         method: 'POST',
+        //         headers: {
+        //             'Content-Type': 'application/json'
+        //         },
+        //         body: JSON.stringify({ token: sessionStorage.getItem('token') })
+        //     });
+
+        //     const newReply = prompt("수정할 댓글을 입력하세요:");
+        //     if (newReply) {
+        //         const response = await fetch(`/posts/${postId}/replies/${replyId}`, {
+        //             method: 'PUT',
+        //             headers: {
+        //                 'Content-Type': 'application/json'
+        //             },
+        //             body: JSON.stringify({ user_id: userId, reply: newReply })
+        //         });
+        //         if (response.ok) {
+        //             loadComments();
+        //         } else {
+        //             alert('Failed to edit comment');
+        //         }
+        //     }
+        // }
+
+        async function deleteComment(replyId) {
+            let path = window.location.pathname; // /posts/id/reply
+            let postId = path.split('/')[2];
+
+            const response = await fetch(`/posts/${postId}/replies/${replyId}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                loadComments();
+            } else {
+                alert('Failed to delete comment');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadComments);
+    </script>
+</head>
+<body>
+    <form id="comment-form" onsubmit="submitComment(event)">
+        <label for="reply">Comment:</label>
+        <textarea id="reply" name="reply" required></textarea>
+        <br>
+        <button type="submit">Submit</button>
+    </form>
+    <ul id="comments-list"></ul>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시글 작성</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: black;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 50%;
+            margin: 50px auto;
+            padding: 20px;
+            background: #11B0A0;
+            border-radius: 10px;
+        }
+        input, textarea {
+            width: 95%;
+            padding: 10px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        button {
+            background: #1DB954;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>게시글 작성</h2>
+        <input type="text" id="title" placeholder="제목 입력">
+        <textarea id="content" rows="10" placeholder="내용 입력"></textarea>
+        <button onclick="submitPost()">작성 완료</button>
+    </div>
+
+    <script>
+        async function submitPost() {
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+            //const username = localStorage.getItem('username');
+            var username = "test";
+
+            if (!username) {
+                alert("로그인이 필요합니다.");
+                return;
+            }
+
+            if (!title || !content) {
+                alert("제목과 내용을 입력해주세요.");
+                return;
+            }
+
+            const response = await fetch('http://localhost:8000/post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, content, author: username })
+            });
+
+            if (response.ok) {
+                alert("게시글이 등록되었습니다.");
+                window.location.href = "home_page"; // 메인 페이지로 이동
+            } else {
+                alert("게시글 작성에 실패했습니다.");
+            }
+        }
+    </script>
+</body>
+</html>

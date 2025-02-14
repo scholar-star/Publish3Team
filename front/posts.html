@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시글 보기</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 60%;
+            margin: 50px auto;
+            padding: 20px;
+            background: #222;
+            border-radius: 10px;
+        }
+        h2 {
+            color: #1DB954;
+        }
+        .info {
+            font-size: 14px;
+            color: #bbb;
+            margin-bottom: 15px;
+        }
+        .content {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .back-button {
+            margin-top: 20px;
+            padding: 10px;
+            background: #1DB954;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 id="post-title">게시글 제목</h2>
+        <div class="info">
+            작성자: <span id="post-author"></span> | 작성 시간: <span id="post-time"></span> | 게시글 ID: <span id="post-id"></span>
+        </div>
+        <div class="content" id="post-content">
+            게시글 내용이 여기에 표시됩니다.
+        </div>
+        <button class="back-button" onclick="goBack()">뒤로 가기</button>
+    </div>
+
+    <script>
+        async function fetchPost() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const postId = urlParams.get('id'); // URL에서 게시글 ID 가져오기
+
+            if (!postId) {
+                alert("잘못된 접근입니다.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:8000/post/${postId}`);
+                if (!response.ok) {
+                    throw new Error("게시글을 찾을 수 없습니다.");
+                }
+
+                const post = await response.json();
+                document.getElementById('post-title').textContent = post.title;
+                document.getElementById('post-author').textContent = post.author;
+                document.getElementById('post-time').textContent = new Date(post.created_at * 1000).toLocaleString();
+                document.getElementById('post-id').textContent = post.id;
+                document.getElementById('post-content').textContent = post.content;
+
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+
+        fetchPost();
+    </script>
+</body>
+</html>

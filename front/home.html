@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>블로그 홈</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #FFFFFF;
+            color: black;
+            margin: 0;
+            padding: 0;
+        }
+        .navbar {
+            background-color: #1DB954;
+            padding: 15px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            position: relative;
+        }
+        .auth-buttons {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .auth-buttons button {
+            background: white;
+            color: #1DB954;
+            padding: 5px 10px;
+            margin-left: 5px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+        }
+        .top-posts {
+            display: flex;
+            justify-content: space-between;
+        }
+        .top-post {
+            width: 30%;
+            background: #222;
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+        }
+        .post-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .post-table th, .post-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .post-table th {
+            background-color: #1DB954;
+            color: white;
+        }
+        .post-title {
+            color: #1DB954;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .category-menu {
+            margin-bottom: 20px;
+        }
+        .category-menu button {
+            background: #1DB954;
+            color: white;
+            padding: 10px;
+            margin: 5px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .search-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .search-container input[type="text"] {
+            width: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px 0 0 5px;
+            outline: none;
+        }
+        .search-container button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #1DB954;
+            color: white;
+            cursor: pointer;
+            border-radius: 0 5px 5px 0;
+        }
+        .search-container button:hover {
+            background-color: #14833b;
+        }
+        .pagination {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .pagination button {
+            background: #1DB954;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .write-post {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1DB954;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        블로그 홈
+        <div class="auth-buttons" id="auth-buttons">
+            <button onclick="location.href='/login'">로그인</button>
+            <button onclick="location.href='/signup'">회원가입</button>
+        </div>
+    </div>
+    <div class="container">
+        <h2>인기 게시물</h2>
+        <div class="top-posts" id="top-posts">
+            <!-- 인기 게시물 동적 삽입 -->
+        </div>
+        
+        <div class="category-menu">
+            <button onclick="filterCategory('전체')">전체</button>
+            <button onclick="filterCategory('경제')">경제</button>
+            <button onclick="filterCategory('연예')">연예</button>
+            <button onclick="filterCategory('여행')">여행</button>
+            <button onclick="filterCategory('패션')">패션</button>
+        </div>
+        <div class="search-container">
+            <input type="text" id="search" placeholder="검색어를 입력하세요">
+            <button onclick="fetchPosts()">검색</button>
+        </div>
+        <table class="post-table">
+            <thead>
+                <tr>
+                    <th>작성 날짜 (최종 수정일)</th>
+                    <th>카테고리</th>
+                    <th>제목</th>
+                    <th>작성자</th>
+                    <th>조회수</th>
+                </tr>
+            </thead>
+            <tbody id="post-list">
+                <!-- 게시글 동적 삽입 -->
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <button onclick="changePage(-1)">이전</button>
+            <span id="current-page">1</span>
+            <button onclick="changePage(1)">다음</button>
+        </div>
+    </div>
+    
+    <button class="write-post" id="write-post" onclick="location.href='/post'">글쓰기</button>
+    
+    <script>
+        let currentPage = 1;
+        const limit = 10;
+        let currentCategory = "전체"; // 현재 선택된 카테고리 (기본값: 전체)
+
+        // 카테고리 필터링
+        function filterCategory(category) {
+            currentCategory = category;  // 선택한 카테고리 저장
+            currentPage = 1;  // 첫 페이지로 이동
+            fetchPosts(currentPage);
+        }
+
+        // 게시글 불러오기
+        async function fetchPosts(page = 1) {
+            var selects = null;
+            const query = document.getElementById('search').value;
+            const all_resp = await fetch(`http://localhost:8000/posts?page=${page}&limit=${limit}&category=${encodeURIComponent(currentCategory)}`);
+            const all_data = await all_resp.json();
+            const posts = all_data.posts;
+            const famousPosts = all_data.famousPosts;
+
+            console.log(famousPosts);
+
+            if(query!='') {
+                const response = await fetch(`http://localhost:8000/posts?query=${query}&page=${page}&limit=${limit}&category=${encodeURIComponent(currentCategory)}`);
+                const data = await response.json();
+                selects = data.posts;
+            }
+
+            const topPostsContainer = document.getElementById('top-posts');
+            const postListContainer = document.getElementById('post-list');
+            const currentPageElement = document.getElementById('current-page');
+            
+            topPostsContainer.innerHTML = '';
+            postListContainer.innerHTML = '';
+
+            // 인기 게시물 상단 출력 (첫 3개)
+            famousPosts.slice(0, 3).forEach(post => {
+                const div = document.createElement('div');
+                div.classList.add('top-post');
+                div.innerHTML = `<h3>${post.title}</h3><p>${post.content.substring(0, 50)}...</p>`;
+                topPostsContainer.appendChild(div);
+            });
+            console.log(posts);
+
+            // 게시글 목록 테이블 출력
+            if(selects == null) {
+                posts.forEach(post => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${new Date(post.created_at * 1000).toLocaleDateString()}</td>
+                        <td>${post.category}</td>
+                        <td><span class="post-title" onclick="viewPost(${post.post_id})">${post.title}</span></td>
+                        <td>${post.user_id}</td>
+                        <td>${post.views}</td>
+                    `;
+                    postListContainer.appendChild(tr);
+                });
+            } else {
+                selects.forEach(post => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${new Date(post.created_at * 1000).toLocaleDateString()}</td>
+                        <td>${post.category}</td>
+                        <td><span class="post-title" onclick="viewPost(${post.post_id})">${post.title}</span></td>
+                        <td>${post.user_id}</td>
+                        <td>${post.views}</td>
+                    `;
+                    postListContainer.appendChild(tr);
+                });
+            }
+            // 현재 페이지 업데이트
+            currentPageElement.innerText = page;
+        }
+        
+        async function checkLogin() {
+            const token = sessionStorage.getItem('token');
+            const authButtons = document.getElementById('auth-buttons');
+            const writePostButton = document.getElementById('write-post');
+            const response = await fetch('http://localhost:8000/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ token: token })
+            }).then(res => res.json());
+            const userid = response.id;
+            if (token) {
+                authButtons.innerHTML = `<span>${userid}님 </span>`;
+                authButtons.innerHTML += `<button onclick="logout()">로그아웃</button>`;
+                writePostButton.style.display = 'block';
+            }
+        }
+
+        // 로그아웃 페이지 시험삼아 만들기
+        function logout() {
+             sessionStorage.removeItem('token');
+             location.href = '/home';
+        }
+
+        function viewPost(post_id) {
+            window.location.href = `view/${post_id}`;
+        }
+
+        function changePage(offset) {
+            if (currentPage + offset < 1) return;
+            currentPage += offset;
+            fetchPosts(currentPage);
+        }
+        
+        fetchPosts(currentPage);
+        checkLogin();
+    </script>
+</body>
+</html>

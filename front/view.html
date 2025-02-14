@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시글 보기</title>
+    <style>
+        /* 전체 배경 설정 */
+        body {
+            font-family: "Noto Sans KR", sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 상단 네비게이션 바 */
+        .navbar {
+            background-color: #ffffff;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar .logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #03C75A;
+            cursor: pointer;
+        }
+
+        .navbar .user-info {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .navbar button {
+            background: none;
+            border: 1px solid #03C75A;
+            color: #03C75A;
+            padding: 8px 12px;
+            margin-left: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+
+        .navbar button:hover {
+            background: #03C75A;
+            color: white;
+        }
+
+        /* 게시글 컨테이너 */
+        .container {
+            width: 60%;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #03C75A;
+            margin-bottom: 10px;
+        }
+
+        .info {
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 15px;
+        }
+
+        .content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* 버튼 스타일 */
+        .button-container {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .button {
+            padding: 10px 15px;
+            background: #03C75A;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+
+        .button:hover {
+            background: #028a43;
+        }
+
+        .delete-button {
+            background: #ff4d4d;
+        }
+
+        .delete-button:hover {
+            background: #cc0000;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 네비게이션 바 -->
+    <div class="navbar">
+        <div class="logo" onclick="location.href='/home'">블로그</div>
+        <div class="user-info" id="user-info">
+            <span id="auth-buttons">
+                <button onclick="location.href='/login'">로그인</button>
+                <button onclick="location.href='/signup'">회원가입</button>
+            </span>
+        </div>
+    </div>
+
+    <!-- 게시글 내용 -->
+    <div class="container">
+        <h2 id="post-title">게시글 제목</h2>
+        <div class="info">
+            작성자: <span id="post-user_id"></span> | 작성 시간: <span id="post-time"></span> | 게시글 ID: <span id="post-id"></span>
+        </div>
+        <div class="content" id="post-content">
+            게시글 내용이 여기에 표시됩니다.
+        </div>
+        
+        <div class="button-container">
+            <button class="button hidden" id="reply-button" onclick="reply()">댓글 달기</button>
+            <button class="button hidden" id="edit-button" onclick="editPost()">수정</button>
+            <button class="button delete-button hidden" id="delete-button" onclick="deletePost()">삭제</button>
+            <button class="button" onclick="goBack()">뒤로 가기</button>
+        </div>
+    </div>
+
+    <script>
+        let loggedInUserId = null;
+        let postAuthorId = null;
+
+        // 현재 페이지 URL에서 post_id 가져오기
+        function getpost_idFromUrl() {
+            const match = window.location.pathname.match(/\/view\/(\d+)$/);
+            return match ? parseInt(match[1], 10) : null;
+        }
+
+        // 로그인한 사용자 확인 및 표시
+        async function checkLogin() {
+            const token = sessionStorage.getItem('token');
+            const authButtons = document.getElementById('auth-buttons');
+
+            if (!token) {
+                console.log("로그인되지 않음");
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8000/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+
+                const data = await response.json();
+
+                if (data.id) {
+                    loggedInUserId = data.id; // 현재 로그인한 사용자 ID 저장
+                    console.log("로그인한 사용자:", loggedInUserId);
+
+                    authButtons.innerHTML = `<span>${loggedInUserId}님 </span>`;
+                }
+            } catch (error) {
+                console.error("로그인 정보 확인 중 오류 발생:", error);
+            }
+        }
+
+        // 게시글 정보 불러오기
+        async function fetchPost() {
+            const post_id = getpost_idFromUrl();
+            console.log("게시글 ID:", post_id);
+            console.log("로그인한 사용자 ID:", loggedInUserId);
+
+            if (!post_id) {
+                alert("잘못된 접근입니다.");
+                return;
+            }
+
+            try {
+                console.log(`요청 보냄: POST /view, post_id=${post_id}, user_id=${loggedInUserId}`);
+
+                const response = await fetch(`http://localhost:8000/view`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ "post_id": post_id, "user_id": loggedInUserId })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json(); // 에러 메시지 파싱
+                    if (response.status === 404) {
+                        alert("게시글을 찾을 수 없습니다.");
+                    } else if (response.status === 401) {
+                        alert("비공개 게시물입니다. 접근 권한이 없습니다.");
+                    } else {
+                        alert(`오류 발생: ${errorData.detail}`);
+                    }
+                    return;
+                }
+
+                const post = await response.json();
+                console.log("서버 응답:", post);
+
+                postAuthorId = post.user_id;
+
+                document.getElementById('post-title').textContent = post.title;
+                document.getElementById('post-user_id').textContent = post.user_id;
+                document.getElementById('post-time').textContent = new Date(post.created_at * 1000).toLocaleString();
+                document.getElementById('post-id').textContent = post.post_id;
+                document.getElementById('post-content').textContent = post.content;
+
+                checkButtonsVisibility();
+
+            } catch (error) {
+                console.error("오류 발생:", error);
+                alert(error.message);
+            }
+        }
+
+        // 수정 & 삭제 버튼 표시 여부 결정
+        function checkButtonsVisibility() {
+            if (loggedInUserId && postAuthorId && loggedInUserId === postAuthorId) {
+                console.log("작성자와 로그인한 사용자가 동일 → 수정/삭제 버튼 표시");
+                document.getElementById('edit-button').classList.remove('hidden');
+                document.getElementById('delete-button').classList.remove('hidden');
+            }
+
+            if (loggedInUserId) {
+                document.getElementById('reply-button').classList.remove('hidden');
+            }
+        }
+
+        // 뒤로 가기
+        function goBack() {
+            window.history.back();
+        }
+
+        // 댓글 페이지 이동
+        function reply() {
+            const post_id = getpost_idFromUrl();
+            window.location.href = `http://localhost:8000/posts/${post_id}/replies`;
+        }
+
+        // 게시글 수정 페이지 이동
+        function editPost() {
+            const post_id = getpost_idFromUrl();
+            window.location.href = `http://localhost:8000/post/${post_id}`;
+        }
+
+        // 게시글 삭제
+        async function deletePost() {
+            const post_id = getpost_idFromUrl();
+
+            if (confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
+                try {
+                    const response = await fetch(`http://localhost:8000/delete/${post_id}`, {
+                        method: "DELETE",
+                        headers: { "Content-Type": "application/json" }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("게시글 삭제 실패");
+                    }
+
+                    alert("게시글이 삭제되었습니다.");
+                    window.location.href = "/home";
+                } catch (error) {
+                    console.error("삭제 오류:", error);
+                    alert("삭제 중 오류 발생");
+                }
+            }
+        }
+
+        // 초기 실행: checkLogin()이 완료된 후 fetchPost() 실행
+        async function init() {
+            await checkLogin();
+            await fetchPost();
+        }
+
+        init();
+    </script>
+</body>
+</html>
